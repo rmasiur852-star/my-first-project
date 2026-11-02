@@ -1,9 +1,6 @@
-
-import pandas as pd
-
-print(pd.__version__)
-
-
+print("Hello, Git!")
+print("I am learning Git and GitHub.")
+print("I am learning Git Branching!")
 
 
 
