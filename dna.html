@@ -1,0 +1,1001 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>3D DNA Controller</title>
+
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #050510;
+            font-family: Arial, sans-serif;
+        }
+
+        h1 {
+            position: absolute;
+            top: 15px;
+            width: 100%;
+            text-align: center;
+            color: white;
+            z-index: 10;
+        }
+
+        #status {
+            position: absolute;
+            top: 290px;
+            left: 20px;
+            color: white;
+            font-size: 17px;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 12px;
+            border-radius: 8px;
+        }
+    </style>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+        }
+    }
+    </script>
+
+</head>
+
+<body>
+
+    <h1>3D DNA Controller With Hand</h1>
+
+    <div id="status">Waiting for hands...</div>
+    <div id="gesture-dashboard">
+    <h3>AI DNA CONTROLLER</h3>
+
+    <div class="hud-item">
+        <span>Camera</span>
+        <strong id="camera-status">Connecting...</strong>
+    </div>
+
+    <div class="hud-item">
+        <span>Gesture</span>
+        <strong id="gesture-status">NO HAND</strong>
+    </div>
+
+    <div class="hud-item">
+        <span>Controller</span>
+        <strong id="controller-status">ACTIVE</strong>
+    </div>
+
+    <div class="hud-item">
+        <span>DNA Grab</span>
+        <strong id="grab-status">RELEASED</strong>
+    </div>
+
+    <hr>
+
+    <small>
+        OPEN PALM — Move / Rotate<br>
+        PINCH — Grab DNA<br>
+        FIST — Pause<br>
+        THUMBS UP — Reset<br>
+        TWO HANDS — Zoom
+    </small>
+</div>
+
+    <style>
+#gesture-dashboard {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 230px;
+    padding: 18px;
+    background: rgba(5, 15, 35, 0.85);
+    color: white;
+    border: 1px solid #00d9ff;
+    border-radius: 12px;
+    font-family: Arial, sans-serif;
+    z-index: 100;
+    box-shadow: 0 0 20px rgba(0, 217, 255, 0.2);
+}
+
+#gesture-dashboard h3 {
+    color: #00d9ff;
+    font-size: 15px;
+    margin-top: 0;
+}
+
+.hud-item {
+    display: flex;
+    justify-content: space-between;
+    margin: 13px 0;
+    font-size: 12px;
+}
+
+.hud-item strong {
+    color: #00ff99;
+}
+
+#gesture-dashboard small {
+    line-height: 2;
+    color: #c5d5e8;
+}
+    </style>
+    <script type="module">
+
+        import * as THREE from "three";
+
+        import {
+            OrbitControls
+        } from "three/addons/controls/OrbitControls.js";
+
+
+        // SCENE
+
+        const scene = new THREE.Scene();
+
+
+        // CAMERA
+
+        const camera = new THREE.PerspectiveCamera(
+            75,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            1000
+        );
+
+        const defaultZoom = 12;
+
+        camera.position.set(0, 0, defaultZoom);
+
+
+        // RENDERER
+
+        const renderer = new THREE.WebGLRenderer({
+            antialias: true
+        });
+
+        renderer.setSize(
+            window.innerWidth,
+            window.innerHeight
+        );
+
+        document.body.appendChild(renderer.domElement);
+
+
+        // MOUSE CONTROLS
+
+        const controls = new OrbitControls(
+            camera,
+            renderer.domElement
+        );
+
+        controls.enableDamping = true;
+
+
+        // DNA GROUP
+
+        const dna = new THREE.Group();
+
+        scene.add(dna);
+
+
+        // GLOWING DNA MATERIALS - LEVEL 16
+
+        const blue = new THREE.MeshStandardMaterial({
+            color: 0x00ccff,
+            emissive: 0x0066ff,
+            emissiveIntensity: 1.5,
+            metalness: 0.5,
+            roughness: 0.2
+        });
+
+        const pink = new THREE.MeshStandardMaterial({
+            color: 0xff3399,
+            emissive: 0xff0066,
+            emissiveIntensity: 1.5,
+            metalness: 0.5,
+            roughness: 0.2
+        });
+
+        const white = new THREE.MeshStandardMaterial({
+            color: 0xffffff,
+            emissive: 0x888888,
+            emissiveIntensity: 0.8
+        });
+
+
+        // PROFESSIONAL DNA LIGHTING - LEVEL 16
+
+        const light = new THREE.PointLight(
+            0x00ccff,
+            150,
+            100
+        );
+
+        light.position.set(5, 5, 10);
+        scene.add(light);
+
+        const pinkLight = new THREE.PointLight(
+            0xff3399,
+            100,
+            100
+        );
+
+        pinkLight.position.set(-5, -5, 5);
+        scene.add(pinkLight);
+
+        scene.add(
+            new THREE.AmbientLight(0xffffff, 1.2)
+        );
+
+        // STAR PARTICLE BACKGROUND - LEVEL 16
+
+        const starGeometry = new THREE.BufferGeometry();
+        const starCount = 2000;
+        const starPositions = new Float32Array(starCount * 3);
+
+        for (let i = 0; i < starCount * 3; i++) {
+            starPositions[i] = (Math.random() - 0.5) * 100;
+        }
+
+        starGeometry.setAttribute(
+            "position",
+            new THREE.BufferAttribute(starPositions, 3)
+        );
+
+        const starMaterial = new THREE.PointsMaterial({
+            color: 0xffffff,
+            size: 0.08,
+            transparent: true,
+            opacity: 0.8,
+            sizeAttenuation: true
+        });
+
+        const stars = new THREE.Points(
+            starGeometry,
+            starMaterial
+        );
+
+        scene.add(stars);
+
+
+        // SPHERE GEOMETRY
+
+        const sphereGeometry = new THREE.SphereGeometry(
+            0.13,
+            16,
+            16
+        );
+
+
+        // CREATE CONNECTING CYLINDER
+
+        function createRod(start, end, material) {
+
+            const direction = new THREE.Vector3()
+                .subVectors(end, start);
+
+            const geometry = new THREE.CylinderGeometry(
+                0.035,
+                0.035,
+                direction.length(),
+                8
+            );
+
+            const rod = new THREE.Mesh(
+                geometry,
+                material
+            );
+
+            rod.position.copy(
+                start.clone().add(end).multiplyScalar(0.5)
+            );
+
+            rod.quaternion.setFromUnitVectors(
+                new THREE.Vector3(0, 1, 0),
+                direction.normalize()
+            );
+
+            dna.add(rod);
+
+        }
+
+
+        // GENERATE DNA
+
+        const steps = 120;
+        const radius = 2;
+        const height = 10;
+
+        let previousA = null;
+        let previousB = null;
+
+        for (let i = 0; i < steps; i++) {
+
+            const angle = i * 0.22;
+
+            const y = (i / steps) * height - height / 2;
+
+            const pointA = new THREE.Vector3(
+                radius * Math.cos(angle),
+                y,
+                radius * Math.sin(angle)
+            );
+
+            const pointB = new THREE.Vector3(
+                -radius * Math.cos(angle),
+                y,
+                -radius * Math.sin(angle)
+            );
+
+            const ballA = new THREE.Mesh(
+                sphereGeometry,
+                blue
+            );
+
+            const ballB = new THREE.Mesh(
+                sphereGeometry,
+                pink
+            );
+
+            ballA.position.copy(pointA);
+            ballB.position.copy(pointB);
+
+            dna.add(ballA);
+            dna.add(ballB);
+
+
+            // CONNECT DNA STRANDS
+
+            if (previousA && previousB) {
+
+                createRod(previousA, pointA, blue);
+
+                createRod(previousB, pointB, pink);
+
+            }
+
+
+            // CONNECT BOTH STRANDS
+
+            if (i % 5 === 0) {
+
+                createRod(pointA, pointB, white);
+
+            }
+
+            previousA = pointA;
+            previousB = pointB;
+
+        }
+
+
+        // HAND DATA
+
+        let handData = {
+            hand_detected: false,
+            hands: [],
+            gesture: "NO HAND",
+            x: 0.5,
+            y: 0.5
+        };
+
+
+        // ZOOM SETTINGS
+
+        let targetZoom = defaultZoom;
+        let currentZoom = defaultZoom;
+
+        const minZoom = 2;
+        const maxZoom = 24;
+
+
+        // MOVEMENT SETTINGS
+
+        let targetX = 0;
+        let targetY = 0;
+
+        let currentX = 0;
+        let currentY = 0;
+
+        const movementSensitivity = 8;
+        let isGrabbing = false;
+
+        let grabOffsetX = 0;
+        let grabOffsetY = 0;
+
+
+        // ADVANCED CONTROLS
+
+        let controlsPaused = false;
+        let targetZRotation = 0;
+        let currentZRotation = 0;
+
+        let previousHandAngle = null;
+
+
+        // STATUS DISPLAY
+
+        const statusElement = document.getElementById("status");
+
+
+        // RESET DNA
+
+        function resetDNA() {
+
+            targetX = 0;
+            targetY = 0;
+
+            currentX = 0;
+            currentY = 0;
+
+            targetZoom = defaultZoom;
+            currentZoom = defaultZoom;
+
+            isGrabbing = false;
+            grabOffsetX = 0;
+            grabOffsetY = 0;
+
+            targetZRotation = 0;
+            currentZRotation = 0;
+            previousHandAngle = null;
+
+            dna.position.set(0, 0, 0);
+
+            dna.rotation.set(0, 0, 0);
+
+            camera.position.set(0, 0, defaultZoom);
+
+            controls.target.set(0, 0, 0);
+
+            controls.update();
+
+            statusElement.innerText =
+                "RESET: DNA restored!";
+
+        }
+
+
+
+        // LEVEL 17: FLOATING DNA SCIENCE LABELS
+        // Keep this code at the top level, outside updateHandData().
+
+        function createScienceLabel(title, detail) {
+            const canvas = document.createElement("canvas");
+            canvas.width = 640;
+            canvas.height = 180;
+
+            const ctx = canvas.getContext("2d");
+            ctx.fillStyle = "rgba(4, 12, 30, 0.92)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = "#35d9ff";
+            ctx.lineWidth = 6;
+            ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+
+            ctx.fillStyle = "#70eaff";
+            ctx.font = "bold 38px Arial";
+            ctx.fillText(title, 28, 66);
+
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "25px Arial";
+            ctx.fillText(detail, 28, 118);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.colorSpace = THREE.SRGBColorSpace;
+
+            const sprite = new THREE.Sprite(
+                new THREE.SpriteMaterial({
+                    map: texture,
+                    transparent: true,
+                    depthTest: false
+                })
+            );
+
+            sprite.scale.set(4.2, 1.18, 1);
+            sprite.renderOrder = 20;
+            return sprite;
+        }
+
+        const scienceLabels = [];
+
+        const scienceLabelData = [
+            {
+                title: "DOUBLE HELIX",
+                detail: "Two strands twist around each other",
+                x: 3.2, y: 3.8, z: 1.8
+            },
+            {
+                title: "BASE PAIRS",
+                detail: "A pairs with T | G pairs with C",
+                x: -3.2, y: 1.3, z: 1.8
+            },
+            {
+                title: "DNA BACKBONE",
+                detail: "Sugar and phosphate form the sides",
+                x: 3.2, y: -1.3, z: 1.8
+            },
+            {
+                title: "HYDROGEN BONDS",
+                detail: "Connect the paired DNA bases",
+                x: -3.2, y: -3.8, z: 1.8
+            }
+        ];
+
+        scienceLabelData.forEach((item, index) => {
+            const label = createScienceLabel(item.title, item.detail);
+            label.position.set(item.x, item.y, item.z);
+            label.userData.baseY = item.y;
+            label.userData.floatOffset = index * 1.2;
+
+            dna.add(label);
+            scienceLabels.push(label);
+        });
+
+        function animateScienceLabels(time) {
+            scienceLabels.forEach((label) => {
+                label.position.y =
+                    label.userData.baseY +
+                    Math.sin(time * 0.0015 + label.userData.floatOffset) * 0.12;
+            });
+        }
+
+        // GET HAND DATA FROM PYTHON
+
+        async function updateHandData() {
+
+            try {
+
+                const response = await fetch("/gesture");
+
+                if (!response.ok) {
+                    throw new Error("API response error");
+                }
+
+                handData = await response.json();
+
+                const detected = handData.hands || [];
+                // Update gesture dashboard
+
+document.getElementById("camera-status").textContent =
+    "CONNECTED";
+
+document.getElementById("gesture-status").textContent =
+    detected.length > 0
+        ? detected.map(h => h.gesture).join(" + ")
+        : "NO HAND";
+
+document.getElementById("controller-status").textContent =
+    controlsPaused ? "PAUSED" : "ACTIVE";
+
+document.getElementById("grab-status").textContent =
+    isGrabbing ? "GRABBING" : "RELEASED";
+
+
+                // GESTURE LIST
+
+                const gestures = detected.map(h =>
+                    String(h.gesture || "").toUpperCase()
+                );
+
+
+                // DETECT RESET
+
+                const hasReset = gestures.some(g =>
+                    g.includes("THUMBS UP") || g.includes("RESET")
+                );
+
+
+                // RESET CONTROL
+
+                if (hasReset) {
+
+                    controlsPaused = true;
+
+                    resetDNA();
+                    isGrabbing = false;
+                    grabOffsetX = 0;
+                    grabOffsetY = 0;
+                    targetZRotation = 0;
+                    currentZRotation = 0;
+                    previousHandAngle = null;
+
+                    return;
+
+                }
+
+
+                // DETECT FIST
+
+                const hasFist = gestures.some(g =>
+                    g.includes("FIST") || g.includes("CLOSED")
+                );
+
+
+                // PAUSE CONTROL
+
+                if (hasFist) {
+
+                    controlsPaused = true;
+                    previousHandAngle = null;
+                    isGrabbing = false;
+
+                    statusElement.innerText =
+                        "PAUSED: Fist detected";
+
+                    return;
+
+                }
+
+
+                // RESUME CONTROL
+
+                controlsPaused = false;
+
+
+                // DISPLAY STATUS
+
+                statusElement.innerText =
+                    detected.map(
+                        h => h.hand + ": " + h.gesture
+                    ).join(" | ") || "Waiting for hands...";
+
+
+                // ONE HAND MOVEMENT
+                // PINCH TO GRAB DNA
+                const pinchingHand = detected.find(
+                    hand => String(hand.gesture || "").toUpperCase() === "PINCH"
+                );
+
+                 if (pinchingHand && !controlsPaused) {
+
+                 const mappedHandX = (pinchingHand.x - 0.5) * 8;
+                 const mappedHandY = -(pinchingHand.y - 0.5) * 8;
+
+    // First pinch: capture DNA position
+                if (!isGrabbing) {
+                grabOffsetX = targetX - mappedHandX;
+                grabOffsetY = targetY - mappedHandY;
+
+                isGrabbing = true;
+    }
+
+    // Move DNA while pinching
+             targetX = mappedHandX + grabOffsetX;
+             targetY = mappedHandY + grabOffsetY;
+
+} else {
+    // Release DNA when fingers separate
+    isGrabbing = false;
+}
+                if (!isGrabbing) {
+
+    const activeHand = detected.find(
+        hand => String(hand.gesture || "").toUpperCase() === "OPEN PALM"
+    );
+
+    if (activeHand) {
+        targetX = (activeHand.x - 0.5) * movementSensitivity;
+
+        targetY = -(activeHand.y - 0.5) * movementSensitivity;
+    }
+}
+
+
+                // TWO HAND ZOOM
+                // TWO-HAND DNA TWIST
+
+if (detected.length === 2 && !pinchingHand && !controlsPaused) {
+
+    const sortedHands = [...detected].sort((a, b) =>
+        a.hand.localeCompare(b.hand)
+    );
+
+    const hand1 = sortedHands[0];
+    const hand2 = sortedHands[1];
+
+    const dx = hand2.palm_x - hand1.palm_x;
+    const dy = hand2.palm_y - hand1.palm_y;
+
+    const currentHandAngle = Math.atan2(dy, dx);
+
+    if (previousHandAngle !== null) {
+
+        let angleDifference =
+            currentHandAngle - previousHandAngle;
+
+        // Prevent sudden angle jumps
+        if (angleDifference > Math.PI) {
+            angleDifference -= Math.PI * 2;
+        }
+
+        if (angleDifference < -Math.PI) {
+            angleDifference += Math.PI * 2;
+        }
+
+        targetZRotation += angleDifference * 1.5;
+    }
+
+    previousHandAngle = currentHandAngle;
+
+} else {
+    previousHandAngle = null;
+}
+
+                if (detected.length === 2 && !pinchingHand) {
+
+                    const hand1 = detected[0];
+
+                    const hand2 = detected[1];
+
+
+                    // DISTANCE BETWEEN PALMS
+
+                    const dx = hand1.palm_x - hand2.palm_x;
+
+                    const dy = hand1.palm_y - hand2.palm_y;
+
+                    const distance = Math.sqrt(
+                        dx * dx + dy * dy
+                    );
+
+
+                    // NORMALIZE DISTANCE
+
+                    const minDistance = 0.12;
+
+                    const maxDistance = 0.65;
+
+                    const normalized = Math.max(
+                        0,
+                        Math.min(
+                            1,
+                            (distance - minDistance) /
+                            (maxDistance - minDistance)
+                        )
+                    );
+
+
+                    // HANDS APART = ZOOM IN
+                    // HANDS CLOSE = ZOOM OUT
+
+                    targetZoom = maxZoom -
+                        normalized * (maxZoom - minZoom);
+
+                }
+
+            }
+
+            catch (error) {
+
+                console.log(
+                    "Hand tracking error:",
+                    error
+                );
+
+                statusElement.innerText =
+                    "Connection error: Check Python server";
+
+                document.getElementById("camera-status").textContent =
+                    "DISCONNECTED";
+                document.getElementById("controller-status").textContent =
+                    "WAITING";
+
+            }
+
+        }
+
+
+        // UPDATE HAND DATA EVERY 50ms
+
+        setInterval(updateHandData, 50);
+
+
+        // ANIMATION
+
+        function animate() {
+            animateScienceLabels(performance.now());
+
+            requestAnimationFrame(animate);
+
+            // SLOWLY ANIMATE THE STAR BACKGROUND - LEVEL 16
+            stars.rotation.y += 0.0003;
+            stars.rotation.x += 0.0001;
+
+            // CONTROLS ACTIVE
+
+            if (!controlsPaused) {
+
+
+                // SMOOTH ZOOM
+
+                currentZoom +=
+                    (targetZoom - currentZoom) * 0.08;
+
+                camera.position.z = currentZoom;
+
+
+                // SMOOTH MOVEMENT
+
+                currentX +=
+                    (targetX - currentX) * 0.08;
+
+                currentY +=
+                    (targetY - currentY) * 0.08;
+                currentZRotation +=
+    (targetZRotation - currentZRotation) * 0.08;
+
+                dna.position.x = currentX;
+
+                dna.position.y = currentY;
+
+
+                // HAND ROTATION
+
+                if (
+                    handData.hands &&
+                    handData.hands.length > 0
+                ) {
+
+                    const activeHand = handData.hands.find(
+                        h => String(h.gesture || "").toUpperCase() === "OPEN PALM"
+                    );
+
+                    if (activeHand) {
+
+                        const targetYRotation =
+                            (activeHand.x - 0.5) * Math.PI * 2;
+
+                        const targetXRotation =
+                            (activeHand.y - 0.5) * Math.PI;
+
+
+                        dna.rotation.y +=
+                            (targetYRotation - dna.rotation.y) * 0.08;
+
+                        dna.rotation.x +=
+                            (targetXRotation - dna.rotation.x) * 0.08;
+
+                    }
+
+                }
+
+                // Apply two-hand twist every frame, even without an open palm.
+                dna.rotation.z = currentZRotation;
+
+            }
+
+
+            controls.update();
+
+            renderer.render(scene, camera);
+
+        }
+
+
+        animate();
+
+
+        // RESPONSIVE SCREEN
+
+        window.addEventListener("resize", () => {
+
+            camera.aspect =
+                window.innerWidth / window.innerHeight;
+
+            camera.updateProjectionMatrix();
+
+            renderer.setSize(
+                window.innerWidth,
+                window.innerHeight
+            );
+
+        });
+
+    </script>
+
+</body>
+
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
