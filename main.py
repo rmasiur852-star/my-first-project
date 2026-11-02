@@ -1,10 +1,7 @@
-print("Hello, Git")
-print("i an learning git and github ")
 
+import pandas as pd
 
-
-
-
+print(pd.__version__)
 
 
 
